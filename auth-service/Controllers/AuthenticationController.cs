@@ -1,6 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+using auth_service.Data;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace auth_service.Controllers
 {
@@ -8,36 +19,74 @@ namespace auth_service.Controllers
     [Route("/")]
     public class AuthenticationController : ControllerBase
     {
-        private readonly ILogger<AuthenticationController> _logger;
+        private readonly AuthenticationContext _context;
 
-        public AuthenticationController(ILogger<AuthenticationController> logger)
+        public AuthenticationController(AuthenticationContext context)
         {
-            _logger = logger;
+            _context = context;
         }
 
         [HttpPost("login")]
-        public IActionResult PostLogin(LoginRequest loginRequest)
+        public async Task<IActionResult> PostLogin(LoginRequest loginRequest)
         {
-            // check the username and password
-            
-            // if valid set the claim in the cookie
-            
-            // if not valid send a 401
-            
+            var user = await _context.User.FirstOrDefaultAsync(u => u.UserName == loginRequest.Username);
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            if (user.Password != loginRequest.Password)
+            {
+                return Unauthorized();
+            }
+
+            var claims = new List<Claim>()
+            {
+                new Claim("UserId", user.UserId.ToString())
+            };
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);
+            HttpContext.User = claimsPrinciple;
+
+            await HttpContext.AuthenticateAsync();
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrinciple);
+
+            return Ok();
         }
 
+        [Authorize]
         [HttpGet("token")]
-        public IEnumerable<LoginResponse> GetToken()
+        public TokenResponse GetToken()
         {
-            // check the claim in the cookie
-            
-            // if authenticated respond with a jwt
-            
-            // if not authenticated respond with 401
+            var claims = HttpContext.User.Claims;
+            var userId = claims.Single(c => c.Type == "UserId").Value;
+
+            const string jwtSecret = "asdv234234^&%&^%&^hjsdfb2%%%";
+            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecret));
+
+            var descriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim("UserId", userId)
+                }),
+                Expires = DateTime.UtcNow.AddMinutes(30),
+                SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var jwtToken = tokenHandler.CreateToken(descriptor);
+            var jwtTokenString = tokenHandler.WriteToken(jwtToken);
+
+            return new TokenResponse()
+            {
+                Jwt = jwtTokenString
+            };
         }
     }
 
-    public class LoginResponse
+    public class TokenResponse
     {
         public string Jwt { get; set; }
     }
