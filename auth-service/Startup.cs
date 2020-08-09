@@ -47,7 +47,7 @@ namespace auth_service
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
+//            app.UseHttpsRedirection();
 
             app.UseRouting();
 
