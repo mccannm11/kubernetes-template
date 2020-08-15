@@ -18,21 +18,19 @@ namespace auth_service
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<AuthenticationContext>(options => options.UseSqlite("Data Source=authentication.db"));
             services.AddAuthentication(options =>
                 {
                     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                })
+				})
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme,
                     options => Configuration.Bind("CookieSettings", options));
 
             services.AddControllers();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
             IServiceScopeFactory serviceScopeFactory)
         {
@@ -46,8 +44,6 @@ namespace auth_service
             {
                 app.UseDeveloperExceptionPage();
             }
-
-//            app.UseHttpsRedirection();
 
             app.UseRouting();
 

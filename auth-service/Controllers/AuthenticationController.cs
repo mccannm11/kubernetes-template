@@ -55,10 +55,14 @@ namespace auth_service.Controllers
             return Ok();
         }
 
-        [Authorize]
         [HttpGet("token")]
-        public TokenResponse GetToken()
+        public IActionResult GetToken()
         {
+            if (!HttpContext.User.Identity.IsAuthenticated)
+            {
+                return Unauthorized();
+            }
+
             var claims = HttpContext.User.Claims;
             var userId = claims.Single(c => c.Type == "UserId").Value;
 
@@ -79,10 +83,10 @@ namespace auth_service.Controllers
             var jwtToken = tokenHandler.CreateToken(descriptor);
             var jwtTokenString = tokenHandler.WriteToken(jwtToken);
 
-            return new TokenResponse()
+            return Ok(new TokenResponse()
             {
                 Jwt = jwtTokenString
-            };
+            });
         }
     }
 
