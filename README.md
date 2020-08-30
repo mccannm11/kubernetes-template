@@ -1,8 +1,5 @@
 ## Kubernetes template
 
-A place to learn Kubernetes with the final result being a domain agnostic architecture that solves man
-
-
 ### Ingress
 Currently using the all-popular nginx Ingress conroller for kubernetes https://kubernetes.github.io/ingress-nginx/
 
