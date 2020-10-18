@@ -50,6 +50,7 @@ type GetFileGuidParams = {
 }
 app.get("/:fileGuid", async (req: Request<GetFileGuidParams>, res) => {
   // list all files
+  
   const params = {
     Bucket: config.BucketName,
     Key: req.params.fileGuid,
@@ -78,10 +79,10 @@ app.get("/", async (req, res) => {
   const params = {
     Bucket: config.BucketName,
   }
-
+  
   try {
     const result = await listObjects(params)
-    res.write("List objects success")
+    console.log("List objects success")
     res.write(JSON.stringify(result))
   } catch (error) {
     res.write(JSON.stringify(error))
