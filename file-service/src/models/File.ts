@@ -1,4 +1,4 @@
-import {Schema} from "mongoose";
+import {Document, Schema} from "mongoose";
 import * as mongoose from "mongoose";
 import {Guid} from "../types";
 
@@ -8,11 +8,11 @@ const fileSchema = new Schema({
 })
 
 
-interface IFile {
+interface IFile extends Document {
     id: Guid
     name: string
 }
 
-const File = mongoose.model('File', fileSchema)
+const File = mongoose.model<IFile>('File', fileSchema)
 
 export {File}
