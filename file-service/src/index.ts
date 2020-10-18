@@ -8,6 +8,8 @@ import S3, {
 import { config } from "./config"
 import { AWSError } from "aws-sdk/lib/error"
 import { Guid } from "./types"
+import mongoose from "mongoose"
+
 const portNumber = process.env.NODE_PORT || 3000
 
 const app = express()
@@ -17,6 +19,8 @@ const s3 = new S3({
   accessKeyId: config.AccessKeyId,
   apiVersion: "2006-03-01",
 })
+
+
 
 type AwsCallback<TOutput> = (err: AWSError, data: TOutput) => void
 
