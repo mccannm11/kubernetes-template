@@ -9,10 +9,10 @@ import { config } from "./config"
 import { AWSError } from "aws-sdk/lib/error"
 import { Guid } from "./types"
 import morgan from "morgan"
+import Busboy from "busboy"
 
 const portNumber = process.env.NODE_PORT || 3000
 const app = express()
-
 
 app.use(morgan("combined"))
 
@@ -75,7 +75,7 @@ app.get("/:fileGuid", async (req: Request<GetFileGuidParams>, res) => {
  * Write a record of the read access
  * Return files depending on file extension
  * .json -> json of all file data
- * .zip -> archive files and reurn download
+ * .zip -> archive files and re-run download
  * for large files -> kick job to compress
  * files and email user when complete
  */
@@ -100,9 +100,17 @@ app.get("/", async (req, res) => {
  * Write file metadata
  * Return the guid that was assigned if one was not provided in the request
  */
-
-
 app.post("/", (req, res) => {
+  const busboy = new Busboy({headers: req.headers})
+  console.log("Starting upload")
+  console.log(req.headers)
+  busboy.on('file', () => {
+    console.log("File event triggered")
+  })
+  
+  busboy.on("finish", () => {
+    console.log("file upload finished")
+  })
 })
 
 /**
@@ -116,7 +124,6 @@ app.patch("/:fileGuid", (req, res) => {})
 
 /**
  * Does the user have delete permissions?
- *
  */
 app.delete("/:fileGuid", (req, res) => {})
 
