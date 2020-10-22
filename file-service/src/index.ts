@@ -8,9 +8,13 @@ import S3, {
 import { config } from "./config"
 import { AWSError } from "aws-sdk/lib/error"
 import { Guid } from "./types"
+import morgan from "morgan"
 
 const portNumber = process.env.NODE_PORT || 3000
 const app = express()
+
+
+app.use(morgan("combined"))
 
 const s3 = new S3({
   secretAccessKey: config.SecretAccessKey,
