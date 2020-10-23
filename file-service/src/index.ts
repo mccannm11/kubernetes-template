@@ -10,6 +10,8 @@ import { AWSError } from "aws-sdk/lib/error"
 import { Guid } from "./types"
 import morgan from "morgan"
 import Busboy from "busboy"
+import { v4 as uuidv4 } from 'uuid';
+
 
 const portNumber = process.env.NODE_PORT || 3000
 const app = express()
@@ -54,7 +56,7 @@ type GetFileGuidParams = {
 }
 app.get("/:fileGuid", async (req: Request<GetFileGuidParams>, res) => {
   // list all files
-  
+
   const params = {
     Bucket: config.BucketName,
     Key: req.params.fileGuid,
@@ -83,7 +85,7 @@ app.get("/", async (req, res) => {
   const params = {
     Bucket: config.BucketName,
   }
-  
+
   try {
     const result = await listObjects(params)
     console.log("List objects success")
@@ -101,16 +103,46 @@ app.get("/", async (req, res) => {
  * Return the guid that was assigned if one was not provided in the request
  */
 app.post("/", (req, res) => {
-  const busboy = new Busboy({headers: req.headers})
+  const busboy = new Busboy({ headers: req.headers })
   console.log("Starting upload")
   console.log(req.headers)
-  busboy.on('file', () => {
+
+  busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
     console.log("File event triggered")
+    
+    const guid = uuidv4()
+    
+    const uploadParams = {
+       Bucket: config.BucketName, Key: guid, Body: file
+    }
+    
+    const uploadOptions = {
+      partSize: 5 * 1024 * 1024, queueSize: 10
+    }
+    
+    const upload = s3.upload(uploadParams, uploadOptions)
+    
+    upload.on('httpUploadProgress', (evt) => {
+      console.log(evt);
+    }).send((err, data) => {
+      console.log('After Upload: ' + new Date());
+      console.log(err, data);
+    });
+    
+    // file.on("data", (data) => {
+    //   console.log(`Received ${data.length} bytes`)
+    // })
+    file.on("end", () => {
+      console.log("File upload finished")
+    })
   })
-  
+
   busboy.on("finish", () => {
     console.log("file upload finished")
+    res.end()
   })
+
+  req.pipe(busboy)
 })
 
 /**
